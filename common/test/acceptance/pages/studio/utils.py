@@ -160,6 +160,18 @@ def get_codemirror_value(page, index=0, find_prefix="$"):
     )
 
 
+def get_input_value(page, css_selector):
+    """
+    Returns the value of input field.
+    """
+    page.wait_for_element_presence(
+        css_selector,
+        'Elements matching "{}" selector are present'.format(css_selector)
+    )
+    selected_elements = page.q(css=css_selector)
+    return [selected_element.get_attribute('value') for selected_element in selected_elements]
+
+
 def set_input_value(page, css, value):
     """
     Sets the text field with the given label (display name) to the specified value.
