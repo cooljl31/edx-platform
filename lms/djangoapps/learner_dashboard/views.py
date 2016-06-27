@@ -8,6 +8,7 @@ from django.http import Http404
 from django.views.decorators.http import require_GET
 
 from edxmako.shortcuts import render_to_response
+from lms.djangoapps.commerce.utils import EcommerceService
 from openedx.core.djangoapps.credentials.utils import get_programs_credentials
 from openedx.core.djangoapps.programs.models import ProgramsApiConfig
 from openedx.core.djangoapps.programs import utils
@@ -67,8 +68,11 @@ def program_details(request, program_id):
     urls = {
         'program_listing_url': reverse('program_listing_view'),
         'track_selection_url': strip_course_id(
-            reverse('course_modes_choose', kwargs={'course_id': FAKE_COURSE_KEY})),
-        'commerce_api_url': reverse('commerce_api:v0:baskets:create')
+            reverse('course_modes_choose', kwargs={'course_id': FAKE_COURSE_KEY})
+        ),
+        'commerce_api_url': reverse('commerce_api:v0:baskets:create'),
+        # TODO: Ecommerce checkout URL requires a SKU. This URL may need to be at the run_mode level.
+        'upgrade_url': EcommerceService().payment_page_url(),
     }
 
     context = {

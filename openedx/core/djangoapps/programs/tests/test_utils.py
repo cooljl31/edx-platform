@@ -704,15 +704,18 @@ class TestSupplementProgramData(ProgramsApiConfigMixin, ModuleStoreTestCase):
         course_overview = CourseOverview.get_from_id(self.course.id)  # pylint: disable=no-member
         run_mode = dict(
             factories.RunMode(
+                certificate_url=None,
+                course_image_url=course_overview.course_image_url,
                 course_key=unicode(self.course.id),  # pylint: disable=no-member
                 course_url=reverse('course_root', args=[self.course.id]),  # pylint: disable=no-member
-                course_image_url=course_overview.course_image_url,
-                start_date=strftime_localized(self.course.start, 'SHORT_DATE'),
                 end_date=strftime_localized(self.course.end, 'SHORT_DATE'),
+                enrollment_open_date=None,
                 is_course_ended=self.course.end < timezone.now(),
                 is_enrolled=False,
                 is_enrollment_open=True,
-                marketing_url='',
+                is_upgrade_required=False,
+                marketing_url=None,
+                start_date=strftime_localized(self.course.start, 'SHORT_DATE'),
             ),
             **kwargs
         )
@@ -722,19 +725,38 @@ class TestSupplementProgramData(ProgramsApiConfigMixin, ModuleStoreTestCase):
 
         self.assertEqual(actual, expected)
 
-    @ddt.data(True, False)
-    def test_student_enrollment_status(self, is_enrolled):
-        """Verify that program data is supplemented correctly."""
+    @ddt.data(
+        (False, None, False),
+        (True, MODES.audit, True),
+        (True, MODES.verified, False),
+    )
+    @ddt.unpack
+    def test_student_enrollment_status(self, is_enrolled, enrolled_mode, is_upgrade_required):
+        """Verify that program data is supplemented with the student's enrollment status."""
         if is_enrolled:
-            CourseEnrollmentFactory(user=self.user, course_id=self.course.id)  # pylint: disable=no-member
+            CourseEnrollmentFactory(user=self.user, course_id=self.course.id, mode=enrolled_mode)  # pylint: disable=no-member
 
         data = utils.supplement_program_data(self.program, self.user)
 
-        self._assert_supplemented(data, is_enrolled=is_enrolled)
+        self._assert_supplemented(data, is_enrolled=is_enrolled, is_upgrade_required=is_upgrade_required)
+
+    @ddt.data(MODES.audit, MODES.verified)
+    def test_inactive_enrollment_no_upgrade(self, enrolled_mode):
+        """Verify that a student with an inactive enrollment isn't encouraged to upgrade."""
+        CourseEnrollmentFactory(
+            user=self.user,
+            course_id=self.course.id,  # pylint: disable=no-member
+            mode=enrolled_mode,
+            is_active=False,
+        )
+
+        data = utils.supplement_program_data(self.program, self.user)
+
+        self._assert_supplemented(data)
 
     @ddt.data(
-        [1, 1, False],
-        [1, -1, True],
+        (1, 1, False),
+        (1, -1, True),
     )
     @ddt.unpack
     def test_course_enrollment_status(self, start_offset, end_offset, is_enrollment_open):
@@ -746,13 +768,15 @@ class TestSupplementProgramData(ProgramsApiConfigMixin, ModuleStoreTestCase):
         data = utils.supplement_program_data(self.program, self.user)
 
         if is_enrollment_open:
-            self._assert_supplemented(data, is_enrollment_open=is_enrollment_open)
+            enrollment_open_date = None
         else:
-            self._assert_supplemented(
-                data,
-                is_enrollment_open=is_enrollment_open,
-                enrollment_open_date=strftime_localized(self.course.enrollment_start, 'SHORT_DATE')
-            )
+            enrollment_open_date = strftime_localized(self.course.enrollment_start, 'SHORT_DATE')
+
+        self._assert_supplemented(
+            data,
+            is_enrollment_open=is_enrollment_open,
+            enrollment_open_date=enrollment_open_date,
+        )
 
     @ddt.data(True, False)
     @mock.patch(UTILS_MODULE + '.certificate_api.certificate_downloadable_status')
@@ -765,11 +789,21 @@ class TestSupplementProgramData(ProgramsApiConfigMixin, ModuleStoreTestCase):
 
         data = utils.supplement_program_data(self.program, self.user)
 
-        if is_uuid_available:
-            expected_url = reverse('certificates:render_cert_by_uuid', kwargs={'certificate_uuid': test_uuid})
-            self._assert_supplemented(data, certificate_url=expected_url)
-        else:
-            self._assert_supplemented(data)
+        expected_url = reverse(
+            'certificates:render_cert_by_uuid', 
+            kwargs={'certificate_uuid': test_uuid}
+        ) if is_uuid_available else None
+
+        self._assert_supplemented(data, certificate_url=expected_url)
+
+    @ddt.data(-1, 0, 1)
+    def test_course_course_ended(self, days_offset):
+        self.course.end = timezone.now() + datetime.timedelta(days=days_offset)
+        self.course = self.update_course(self.course, self.user.id)  # pylint: disable=no-member
+
+        data = utils.supplement_program_data(self.program, self.user)
+
+        self._assert_supplemented(data)
 
     @mock.patch(UTILS_MODULE + '.get_organization_by_short_name')
     def test_organization_logo_exists(self, mock_get_organization_by_short_name):
@@ -780,6 +814,7 @@ class TestSupplementProgramData(ProgramsApiConfigMixin, ModuleStoreTestCase):
         mock_get_organization_by_short_name.return_value = {
             'logo': mock_image
         }
+
         data = utils.supplement_program_data(self.program, self.user)
         self.assertEqual(data['organizations'][0].get('img'), mock_logo_url)
 
@@ -799,11 +834,3 @@ class TestSupplementProgramData(ProgramsApiConfigMixin, ModuleStoreTestCase):
         mock_get_organization_by_short_name.return_value = {'logo': None}
         data = utils.supplement_program_data(self.program, self.user)
         self.assertEqual(data['organizations'][0].get('img'), None)
-
-    @ddt.data(-1, 0, 1)
-    def test_course_course_ended(self, days_offset):
-        self.course.end = timezone.now() + datetime.timedelta(days=days_offset)
-        self.course = self.update_course(self.course, self.user.id)  # pylint: disable=no-member
-        data = utils.supplement_program_data(self.program, self.user)
-
-        self._assert_supplemented(data)

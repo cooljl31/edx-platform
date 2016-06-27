@@ -341,34 +341,47 @@ def supplement_program_data(program_data, user):
             course_key = CourseKey.from_string(run_mode['course_key'])
             course_overview = CourseOverview.get_from_id(course_key)
 
-            run_mode['course_url'] = reverse('course_root', args=[course_key])
-            run_mode['course_image_url'] = course_overview.course_image_url
+            course_url = reverse('course_root', args=[course_key])
+            course_image_url = course_overview.course_image_url
 
-            run_mode['start_date'] = course_overview.start_datetime_text()
-            run_mode['end_date'] = course_overview.end_datetime_text()
+            start_date_string = course_overview.start_datetime_text()
+            end_date_string = course_overview.end_datetime_text()
 
             end_date = course_overview.end or datetime.datetime.max.replace(tzinfo=pytz.UTC)
-            run_mode['is_course_ended'] = end_date < timezone.now()
+            is_course_ended = end_date < timezone.now()
 
-            run_mode['is_enrolled'] = CourseEnrollment.is_enrolled(user, course_key)
+            is_enrolled = CourseEnrollment.is_enrolled(user, course_key)
 
             enrollment_start = course_overview.enrollment_start or datetime.datetime.min.replace(tzinfo=pytz.UTC)
             enrollment_end = course_overview.enrollment_end or datetime.datetime.max.replace(tzinfo=pytz.UTC)
             is_enrollment_open = enrollment_start <= timezone.now() < enrollment_end
-            run_mode['is_enrollment_open'] = is_enrollment_open
-            if not is_enrollment_open:
-                # Only render this enrollment open date if the enrollment open is in the future
-                run_mode['enrollment_open_date'] = strftime_localized(enrollment_start, 'SHORT_DATE')
 
-            # TODO: Currently unavailable on LMS.
-            run_mode['marketing_url'] = ''
+            enrollment_open_date = None if is_enrollment_open else strftime_localized(enrollment_start, 'SHORT_DATE')
 
             certificate_data = certificate_api.certificate_downloadable_status(user, course_key)
             certificate_uuid = certificate_data.get('uuid')
-            if certificate_uuid:
-                run_mode['certificate_url'] = certificate_api.get_certificate_url(
-                    course_id=course_key,
-                    uuid=certificate_uuid,
-                )
+            certificate_url = certificate_api.get_certificate_url(
+                course_id=course_key,
+                uuid=certificate_uuid,
+            ) if certificate_uuid else None
+
+            enrolled_mode, _ = CourseEnrollment.enrollment_mode_for_user(user, course_key)
+            is_mode_mismatch = run_mode['mode_slug'] != enrolled_mode
+            is_upgrade_required = is_enrolled and is_mode_mismatch
+
+            run_mode.update({
+                'certificate_url': certificate_url,
+                'course_image_url': course_image_url,
+                'course_url': course_url,
+                'end_date': end_date_string,
+                'enrollment_open_date': enrollment_open_date,
+                'is_course_ended': is_course_ended,
+                'is_enrolled': is_enrolled,
+                'is_enrollment_open': is_enrollment_open,
+                'is_upgrade_required': is_upgrade_required,
+                # TODO: Not currently available on LMS.
+                'marketing_url': None,
+                'start_date': start_date_string,
+            })
 
     return program_data
