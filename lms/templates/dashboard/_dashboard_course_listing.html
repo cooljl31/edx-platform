@@ -114,7 +114,7 @@ from student.helpers import (
           % elif course_overview.starts_within(days=5):   # hasn't started yet
             ${_("Starts - {start_date}").format(start_date=course_overview.start_datetime_text("DAY_AND_TIME", time_zone))}
           % else:   # hasn't started yet
-            ${_("Starts - {start_date}").format(start_date=course_overview.start_datetime_text("SHORT_DATE", time_zone`))}
+            ${_("Starts - {start_date}").format(start_date=course_overview.start_datetime_text("SHORT_DATE", time_zone))}
           % endif
           </span>
         </div>

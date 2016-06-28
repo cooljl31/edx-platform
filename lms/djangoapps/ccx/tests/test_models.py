@@ -3,9 +3,10 @@ tests for the models
 """
 import json
 from datetime import datetime, timedelta
-from django.utils.timezone import UTC
+from freezegun import freeze_time
 from mock import patch
 from nose.plugins.attrib import attr
+from pytz import timezone, utc
 from student.roles import CourseCcxCoachRole
 from student.tests.factories import (
     AdminFactory,
@@ -65,7 +66,7 @@ class TestCCX(ModuleStoreTestCase):
         For this reason we test the difference between and make sure it is less
         than one second.
         """
-        expected = datetime.now(UTC())
+        expected = datetime.now(utc)
         self.set_ccx_override('start', expected)
         actual = self.ccx.start  # pylint: disable=no-member
         diff = expected - actual
@@ -73,7 +74,7 @@ class TestCCX(ModuleStoreTestCase):
 
     def test_ccx_start_caching(self):
         """verify that caching the start property works to limit queries"""
-        now = datetime.now(UTC())
+        now = datetime.now(utc)
         self.set_ccx_override('start', now)
         with check_mongo_calls(1):
             # these statements are used entirely to demonstrate the
@@ -90,7 +91,7 @@ class TestCCX(ModuleStoreTestCase):
 
     def test_ccx_due_is_correct(self):
         """verify that the due datetime for a ccx is correctly retrieved"""
-        expected = datetime.now(UTC())
+        expected = datetime.now(utc)
         self.set_ccx_override('due', expected)
         actual = self.ccx.due  # pylint: disable=no-member
         diff = expected - actual
@@ -98,7 +99,7 @@ class TestCCX(ModuleStoreTestCase):
 
     def test_ccx_due_caching(self):
         """verify that caching the due property works to limit queries"""
-        expected = datetime.now(UTC())
+        expected = datetime.now(utc)
         self.set_ccx_override('due', expected)
         with check_mongo_calls(1):
             # these statements are used entirely to demonstrate the
@@ -110,7 +111,7 @@ class TestCCX(ModuleStoreTestCase):
 
     def test_ccx_has_started(self):
         """verify that a ccx marked as starting yesterday has started"""
-        now = datetime.now(UTC())
+        now = datetime.now(utc)
         delta = timedelta(1)
         then = now - delta
         self.set_ccx_override('start', then)
@@ -118,7 +119,7 @@ class TestCCX(ModuleStoreTestCase):
 
     def test_ccx_has_not_started(self):
         """verify that a ccx marked as starting tomorrow has not started"""
-        now = datetime.now(UTC())
+        now = datetime.now(utc)
         delta = timedelta(1)
         then = now + delta
         self.set_ccx_override('start', then)
@@ -126,7 +127,7 @@ class TestCCX(ModuleStoreTestCase):
 
     def test_ccx_has_ended(self):
         """verify that a ccx that has a due date in the past has ended"""
-        now = datetime.now(UTC())
+        now = datetime.now(utc)
         delta = timedelta(1)
         then = now - delta
         self.set_ccx_override('due', then)
@@ -135,7 +136,7 @@ class TestCCX(ModuleStoreTestCase):
     def test_ccx_has_not_ended(self):
         """verify that a ccx that has a due date in the future has not eneded
         """
-        now = datetime.now(UTC())
+        now = datetime.now(utc)
         delta = timedelta(1)
         then = now + delta
         self.set_ccx_override('due', then)
@@ -152,7 +153,7 @@ class TestCCX(ModuleStoreTestCase):
     }))
     def test_start_datetime_short_date(self):
         """verify that the start date for a ccx formats properly by default"""
-        start = datetime(2015, 1, 1, 12, 0, 0, tzinfo=UTC())
+        start = datetime(2015, 1, 1, 12, 0, 0, tzinfo=utc)
         expected = "Jan 01, 2015"
         self.set_ccx_override('start', start)
         actual = self.ccx.start_datetime_text()  # pylint: disable=no-member
@@ -163,18 +164,50 @@ class TestCCX(ModuleStoreTestCase):
     }))
     def test_start_datetime_date_time_format(self):
         """verify that the DATE_TIME format also works as expected"""
-        start = datetime(2015, 1, 1, 12, 0, 0, tzinfo=UTC())
+        start = datetime(2015, 1, 1, 12, 0, 0, tzinfo=utc)
         expected = "Jan 01, 2015 at 12:00 UTC"
         self.set_ccx_override('start', start)
         actual = self.ccx.start_datetime_text('DATE_TIME')  # pylint: disable=no-member
         self.assertEqual(expected, actual)
+
+    @freeze_time("2015-11-01 08:59:00")
+    def test_startdate_time_zone_before(self):
+        """
+        verify that start date is correctly converted when time zone specified
+        and before daylight savings switch
+        """
+        time_zone = timezone('America/Los_Angeles')
+        start = datetime(2015, 11, 1, 8, 59, 0, tzinfo=utc)
+        expected_short_date = "Nov 01, 2015"
+        expected_datetime = "Nov 01, 2015 at 01:59 PDT"
+        self.set_ccx_override('start', start)
+        actual_short_date = self.ccx.start_datetime_text(time_zone=time_zone)
+        actual_datetime = self.ccx.start_datetime_text('DATE_TIME', time_zone)
+        self.assertEqual(expected_short_date, actual_short_date)
+        self.assertEqual(expected_datetime, actual_datetime)
+
+    @freeze_time("2015-11-01 09:00:00")
+    def test_startdate_time_zone_after(self):
+        """
+        verify that start date is correctly converted when time zone specified
+        and after daylight savings switch
+        """
+        time_zone = timezone('America/Los_Angeles')
+        start = datetime(2015, 11, 1, 9, 00, 0, tzinfo=utc)
+        expected_short_date = "Nov 01, 2015"
+        expected_datetime = "Nov 01, 2015 at 01:00 PST"
+        self.set_ccx_override('start', start)
+        actual_short_date = self.ccx.start_datetime_text(time_zone=time_zone)
+        actual_datetime = self.ccx.start_datetime_text('DATE_TIME', time_zone)
+        self.assertEqual(expected_short_date, actual_short_date)
+        self.assertEqual(expected_datetime, actual_datetime)
 
     @patch('util.date_utils.ugettext', fake_ugettext(translations={
         "SHORT_DATE_FORMAT": "%b %d, %Y",
     }))
     def test_end_datetime_short_date(self):
         """verify that the end date for a ccx formats properly by default"""
-        end = datetime(2015, 1, 1, 12, 0, 0, tzinfo=UTC())
+        end = datetime(2015, 1, 1, 12, 0, 0, tzinfo=utc)
         expected = "Jan 01, 2015"
         self.set_ccx_override('due', end)
         actual = self.ccx.end_datetime_text()  # pylint: disable=no-member
@@ -185,11 +218,43 @@ class TestCCX(ModuleStoreTestCase):
     }))
     def test_end_datetime_date_time_format(self):
         """verify that the DATE_TIME format also works as expected"""
-        end = datetime(2015, 1, 1, 12, 0, 0, tzinfo=UTC())
+        end = datetime(2015, 1, 1, 12, 0, 0, tzinfo=utc)
         expected = "Jan 01, 2015 at 12:00 UTC"
         self.set_ccx_override('due', end)
         actual = self.ccx.end_datetime_text('DATE_TIME')  # pylint: disable=no-member
         self.assertEqual(expected, actual)
+
+    @freeze_time("2015-11-01 08:59:00")
+    def test_end_datetime_time_zone_before(self):
+        """
+        verify that end date is correctly converted when time zone specified
+        and before daylight savings switch
+        """
+        time_zone = timezone('America/Los_Angeles')
+        end = datetime(2015, 11, 1, 8, 59, 0, tzinfo=utc)
+        expected_short_date = "Nov 01, 2015"
+        expected_datetime = "Nov 01, 2015 at 01:59 PDT"
+        self.set_ccx_override('due', end)
+        actual_short_date = self.ccx.end_datetime_text(time_zone=time_zone)
+        actual_datetime = self.ccx.end_datetime_text('DATE_TIME', time_zone)
+        self.assertEqual(expected_short_date, actual_short_date)
+        self.assertEqual(expected_datetime, actual_datetime)
+
+    @freeze_time("2015-11-01 09:00:00")
+    def test_end_datetime_zone_after(self):
+        """
+        verify that end date is correctly converted when time zone specified
+        and after daylight savings switch
+        """
+        time_zone = timezone('America/Los_Angeles')
+        end = datetime(2015, 11, 1, 9, 00, 0, tzinfo=utc)
+        expected_short_date = "Nov 01, 2015"
+        expected_datetime = "Nov 01, 2015 at 01:00 PST"
+        self.set_ccx_override('due', end)
+        actual_short_date = self.ccx.end_datetime_text(time_zone=time_zone)
+        actual_datetime = self.ccx.end_datetime_text('DATE_TIME', time_zone)
+        self.assertEqual(expected_short_date, actual_short_date)
+        self.assertEqual(expected_datetime, actual_datetime)
 
     @patch('util.date_utils.ugettext', fake_ugettext(translations={
         "DATE_TIME_FORMAT": "%b %d, %Y at %H:%M",

@@ -182,8 +182,9 @@ def _datetime_to_string(date_time, format_string, time_zone, strftime_localized)
             formatting function
     """
     result = strftime_localized(date_time.astimezone(time_zone), format_string)
+    abbr = get_formatted_time_zone(time_zone, **{'abbr': True})
     return (
-        result + ' ' + get_formatted_time_zone(time_zone, **{'abbr': True}) if format_string in ['DATE_TIME', 'TIME', 'DAY_AND_TIME']
+        result + ' ' + abbr if format_string in ['DATE_TIME', 'TIME', 'DAY_AND_TIME']
         else result
     )
     # TODO: Change this back to above

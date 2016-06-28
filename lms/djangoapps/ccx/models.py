@@ -92,7 +92,7 @@ class CustomCourseForEdX(models.Model):
         value = strftime(self.start.astimezone(time_zone), format_string)
         if format_string == 'DATE_TIME':
             kwargs = {'abbr': True}
-            value += get_formatted_time_zone(time_zone, **kwargs)
+            value += ' ' + get_formatted_time_zone(time_zone, **kwargs)
         return value
 
     def end_datetime_text(self, format_string="SHORT_DATE", time_zone=utc):
@@ -111,7 +111,7 @@ class CustomCourseForEdX(models.Model):
         value = strftime(self.due.astimezone(time_zone), format_string)
         if format_string == 'DATE_TIME':
             kwargs = {'abbr': True}
-            value += get_formatted_time_zone(time_zone, **kwargs)
+            value += ' ' + get_formatted_time_zone(time_zone, **kwargs)
         return value
 
     @property

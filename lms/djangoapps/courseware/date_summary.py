@@ -117,7 +117,6 @@ class DateSummary(object):
         date_format = _(u"{relative} ago - {absolute}") if date_has_passed else _(u"in {relative} - {absolute}")
         return date_format.format(
             relative=relative_date,
-            #TODO: normalize?
             absolute=self.date.astimezone(self.time_zone).strftime(self.date_format.encode('utf-8')).decode('utf-8'),
         )
 
@@ -166,9 +165,7 @@ class TodaysDate(DateSummary):
     @property
     def title(self):
         return _(u'Today is {date}').format(
-            date=self.time_zone.normalize(self.date).strftime(self.date_format.encode('utf-8')).decode('utf-8')
-            #TODO: Refactor to below?
-            #date=get_time_display(self.date, self.date_formate.encode('utf-8'),self.time_zone.zone)
+            date=self.date.astimezone(self.time_zone).strftime(self.date_format.encode('utf-8')).decode('utf-8')
         )
 
 
