@@ -6,10 +6,7 @@
         'video/00_sjson.js',
         'video/00_async_process.js',
         'edx-ui-toolkit/js/utils/html-utils',
-        'draggabilly',
-        'modernizr',
-        'afontgarde',
-        'edxicons'
+        'draggabilly'
     ], function (Sjson, AsyncProcess, HtmlUtils, Draggabilly) {
 
         /**
@@ -83,29 +80,23 @@
 
                 var langHtml = HtmlUtils.interpolateHtml(
                     HtmlUtils.HTML(
-                        [                    
+                        [
                             '<div class="grouped-controls">',
                                 '<button class="control toggle-captions" aria-disabled="false">',
-                                    '<span class="icon-fallback-img">',
-                                        '<span class="icon fa fa-cc" aria-hidden="true"></span>',
-                                        '<span class="sr control-text"></span>',
-                                    '</span>',
+                                    '<span class="icon fa fa-cc" aria-hidden="true"></span>',
+                                    '<span class="sr control-text"></span>',
                                 '</button>',
                                 '<button class="control toggle-transcript" aria-disabled="false">',
-                                    '<span class="icon-fallback-img">',
-                                        '<span class="icon fa fa-quote-left" aria-hidden="true"></span>',
-                                        '<span class="sr control-text"></span>',
-                                    '</span>',
+                                    '<span class="icon fa fa-quote-left" aria-hidden="true"></span>',
+                                    '<span class="sr control-text"></span>',
                                 '</button>',
                                 '<div class="lang menu-container" role="application">',
                                     '<p class="sr instructions" id="lang-instructions"></p>',
                                     '<button class="control language-menu" aria-disabled="false"',
                                         'aria-describedby="lang-instructions" ',
                                         'title="{langTitle}">',
-                                        '<span class="icon-fallback-img">',
-                                            '<span class="icon fa fa-caret-left" aria-hidden="true"></span>',
-                                            '<span class="sr control-text"></span>',
-                                        '</span>',
+                                        '<span class="icon fa fa-caret-left" aria-hidden="true"></span>',
+                                        '<span class="sr control-text"></span>',
                                     '</button>',
                                 '</div>',
                             '</div>'
