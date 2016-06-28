@@ -663,3 +663,14 @@ section.self-assessment {
 }
 
 
+/*
+ * CodeMirror color contrast overrides
+ * (so we don't change the vendor file)
+ */
+
+.CodeMirror {
+    
+    .CodeMirror-linenumber {
+        color: $gray-d2;
+    }
+}
