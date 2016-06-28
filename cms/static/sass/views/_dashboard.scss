@@ -492,7 +492,6 @@
       @extend %t-copy-sub1;
       @include transition(opacity $tmg-f1 ease-in-out 0);
       color: $gray;
-      opacity: 0.75;
 
       .metadata-item {
         display: inline-block;

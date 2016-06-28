@@ -62,13 +62,13 @@
 // blue primary button
 %btn-primary-blue {
   @extend %ui-btn-primary;
-  background: $blue;
-  border-color: $blue-s1;
+  background: $blue-d2;
+  border-color: $blue-d3;
   color: $white;
 
   &:hover, &:active {
-    background: $blue-l1;
-    border-color: $blue-l1;
+    background: $blue-d1;
+    border-color: $blue-d2;
   }
 
   &.current, &.active {
@@ -85,13 +85,13 @@
 // green primary button
 %btn-primary-green {
   @extend %ui-btn-primary;
-  background: $green;
-  border-color: $green;
+  background: $green-d1;
+  border-color: $green-d2;
   color: $white;
 
   &:hover, &:active {
     background: $green-s1;
-    border-color: $green-s1;
+    border-color: $green;
   }
 
   &.current, &.active {
@@ -132,11 +132,11 @@
 %btn-secondary-blue {
   @extend %ui-btn-secondary;
   border-color: $blue-l3;
-  color: $blue;
+  color: $blue-d1;
 
   &:hover, &:active {
     background: $blue-l4;
-    color: $blue-s2;
+    color: $blue;
   }
 
   &.current, &.active {
@@ -235,7 +235,7 @@
 
   &:hover, &:active {
     background: $white;
-    color: $blue-s1;
+    color: $blue-d1;
   }
 
   &.current, &.active {
@@ -243,7 +243,7 @@
     color: $gray-d4;
 
     &:hover, &:active {
-      color: $blue-s1;
+      color: $blue-d1;
     }
   }
 }
@@ -268,7 +268,7 @@
       color: $gray-l1;
 
       &:hover {
-        background-color: $blue;
+        background-color: $blue-d1;
         color: $gray-l6;
       }
 
@@ -320,7 +320,7 @@
   vertical-align: top;
 
   &:hover {
-    color: $blue;
+    color: $blue-d1;
   }
 
   .ui-toggle-expansion {
@@ -358,7 +358,7 @@
     // STATE: hover/active
     &:hover, &:active {
       @extend %ui-fake-link;
-      color: $ui-link-color-focus;
+      color: $blue-d1;
     }
   }
 
@@ -404,7 +404,7 @@
       position: absolute;
       top: -12px;
       left: -($baseline/4);
-      color: $blue-s1;
+      color: $blue-d1;
     }
   }
 

@@ -84,7 +84,7 @@ h1 {
     position: relative;
     top: ($baseline/4);
     display: block;
-    color: $gray-l2;
+    color: $gray-d2;
   }
 }
 
@@ -705,9 +705,10 @@ hr.divider {
       color: $white;
     }
 
-    &:hover {
+    &:hover,
+    &:active {
       top: 0;
-      background: $blue;
+      background: $blue-d1;
     }
   }
 
