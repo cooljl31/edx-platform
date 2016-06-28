@@ -44,10 +44,10 @@ body, input, button {
 a {
   @include transition(color $tmg-f2 ease-in-out 0s);
   text-decoration: none;
-  color: $blue;
+  color: $blue-d2;
 
   &:hover {
-    color: $orange-d1;
+    color: $orange-d2;
   }
 }
 

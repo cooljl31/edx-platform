@@ -76,7 +76,7 @@
       color: $gray-d1;
 
       &:hover {
-        color: $blue-s1;
+        color: $blue-d2;
       }
     }
   }
@@ -399,10 +399,10 @@ body.course.view-team .nav-library-settings .title,
 body.course.view-team .nav-library-settings-team,
 
 {
-  color: $blue;
+  color: $blue-d2;
 
   a {
-    color: $blue;
+    color: $blue-d2;
     pointer-events: none;
   }
 }
